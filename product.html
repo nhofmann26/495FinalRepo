@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UPshop Product</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>UPshop</h1>
+        <nav>
+            <a href="index.html">Shop</a>
+            <a href="cart.html">Cart</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Product Details</h2>
+        <div id="product"></div>
+    </main>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+
+        fetch(`api/product.php?id=${id}`)
+            .then(response => response.json())
+            .then(product => {
+                let output = `
+                    <div class="center-box">
+                        <img src="${product.image_url}" alt="${product.name}" style="width:100%; max-width:300px; height:auto; border-radius:8px;"><br><br>
+                        <strong>${product.name}</strong><br><br>
+                        $${product.price}<br>
+                        Stock: ${product.quantity}<br>
+                        <p>${product.description}</p>
+                        <button onclick="addToCart(${product.product_id}, '${product.name}', ${product.price})">Add to Cart</button>
+                    </div>
+                `;
+
+                document.getElementById("product").innerHTML = output;
+            });
+
+        function addToCart(productId, name, price) {
+            let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+            let existing = cart.find(item => item.product_id == productId);
+
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({
+                    product_id: productId,
+                    name: name,
+                    price: price,
+                    quantity: 1
+                });
+            }
+
+            localStorage.setItem("cart", JSON.stringify(cart));
+            alert("Added to cart");
+        }
+    </script>
+</body>
+</html>

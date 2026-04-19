@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UPshop Order Confirmation</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>UPshop</h1>
+        <nav>
+            <a href="index.html">Shop</a>
+            <a href="cart.html">Cart</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Order Confirmation</h2>
+
+        <div id="order-info" class="center-box"></div>
+        <div id="order-items"></div>
+    </main>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+
+        fetch(`api/get_order.php?id=${id}`)
+            .then(response => response.json())
+            .then(data => {
+                let order = data.order;
+                let items = data.items;
+
+                let info = `
+                    <p><strong>Order ID:</strong> ${order.order_id}</p>
+                    <p><strong>Customer Name:</strong> ${order.customer_name}</p>
+                    <p><strong>Total:</strong> $${order.total}</p>
+                    <p><strong>Created At:</strong> ${order.created_at}</p>
+                `;
+
+                let itemsHtml = "<h3>Items</h3>";
+                items.forEach(item => {
+                    itemsHtml += `
+                        <div class="section-box">
+                            <strong>${item.name}</strong><br><br>
+                            Quantity: ${item.quantity}<br>
+                            Price: $${item.price}
+                        </div>
+                    `;
+                });
+
+                document.getElementById("order-info").innerHTML = info;
+                document.getElementById("order-items").innerHTML = itemsHtml;
+            });
+    </script>
+</body>
+</html>

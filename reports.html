@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UPshop Reports</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>UPshop</h1>
+        <nav>
+            <a href="index.html">Shop</a>
+            <a href="cart.html">Cart</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Reports</h2>
+
+        <div class="controls">
+            <button onclick="runTool('recompute_totals')">Recompute Totals</button>
+            <button onclick="runTool('refresh_summary')">Refresh 90-Day Summary</button>
+        </div>
+
+        <div id="tool-result" class="section-box"></div>
+
+        <h3>Top Products</h3>
+        <div id="top-products"></div>
+
+        <h3>Daily Sales</h3>
+        <div id="daily-sales"></div>
+
+        <h3>Daily Sales Chart</h3>
+        <div class="section-box">
+            <canvas id="salesChart" width="800" height="400"></canvas>
+        </div>
+
+        <h3>Low Stock</h3>
+        <div id="low-stock"></div>
+    </main>
+
+    <script>
+        fetch("api/reports.php")
+            .then(res => res.json())
+            .then(data => {
+
+                let topHtml = "";
+                data.top_products.forEach(p => {
+                    topHtml += `
+                        <div class="section-box">
+                            <strong>${p.name}</strong><br><br>
+                            Revenue: $${parseFloat(p.revenue).toFixed(2)}<br>
+                            Units Sold: ${p.units_sold}
+                        </div>
+                    `;
+                });
+                document.getElementById("top-products").innerHTML = topHtml;
+
+                let salesHtml = "";
+                data.daily_sales.forEach(s => {
+                    salesHtml += `
+                        <div class="section-box">
+                            Date: ${s.sale_date}<br>
+                            Total Sales: $${parseFloat(s.daily_total).toFixed(2)}<br>
+                            Orders: ${s.orders_count}
+                        </div>
+                    `;
+                });
+                document.getElementById("daily-sales").innerHTML = salesHtml;
+
+                let lowHtml = "";
+                if (data.low_stock.length === 0) {
+                    lowHtml = `<div class="section-box">No low-stock items right now.</div>`;
+                } else {
+                    data.low_stock.forEach(l => {
+                        lowHtml += `
+                            <div class="section-box warning">
+                                <strong>${l.name}</strong><br><br>
+                                Quantity: ${l.quantity}<br>
+                                Reorder Level: ${l.reorder_level}
+                            </div>
+                        `;
+                    });
+                }
+                document.getElementById("low-stock").innerHTML = lowHtml;
+
+                let labels = data.daily_sales.map(s => s.sale_date);
+                let salesData = data.daily_sales.map(s => parseFloat(s.daily_total));
+
+                let movingAvg = [];
+                for (let i = 0; i < salesData.length; i++) {
+                    let sum = 0;
+                    let count = 0;
+
+                    for (let j = i - 2; j <= i; j++) {
+                        if (j >= 0) {
+                            sum += salesData[j];
+                            count++;
+                        }
+                    }
+
+                    movingAvg.push(sum / count);
+                }
+
+                const ctx = document.getElementById("salesChart").getContext("2d");
+
+                new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: "Daily Sales",
+                                data: salesData,
+                                borderWidth: 2,
+                                fill: false
+                            },
+                            {
+                                label: "3-Day Moving Average",
+                                data: movingAvg,
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+
+        function runTool(action) {
+            fetch("api/tools.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ action: action })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let output = "";
+
+                if (data.error) {
+                    output = `<p>${data.error}</p>`;
+                } else {
+                    output = `<p>${data.message}</p>`;
+
+                    if (data.summary) {
+                        output += `
+                            <p>Orders Last 90 Days: ${data.summary.orders_last_90_days}</p>
+                            <p>Revenue Last 90 Days: $${parseFloat(data.summary.revenue_last_90_days).toFixed(2)}</p>
+                        `;
+                    }
+                }
+
+                document.getElementById("tool-result").innerHTML = output;
+            });
+        }
+    </script>
+</body>
+</html>

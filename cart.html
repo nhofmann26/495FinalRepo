@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UPshop Cart</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>UPshop</h1>
+        <nav>
+            <a href="index.html">Shop</a>
+            <a href="cart.html">Cart</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Your Cart</h2>
+
+        <div id="cart-items"></div>
+        <h3 id="cart-total"></h3>
+
+        <div class="center-box">
+            <label for="customer_name">Your Name:</label>
+            <input type="text" id="customer_name">
+            <button onclick="checkout()">Checkout</button>
+        </div>
+    </main>
+
+    <script>
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+        let output = "";
+        let total = 0;
+
+        if (cart.length === 0) {
+            output = "<p>Your cart is empty.</p>";
+        } else {
+            cart.forEach((item, index) => {
+                let itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                output += `
+                    <div class="section-box">
+                        <strong>${item.name}</strong><br><br>
+                        Price: $${item.price}<br>
+                        Quantity:
+                        <input type="number" min="1" value="${item.quantity}" onchange="updateQuantity(${index}, this.value)">
+                        <br><br>
+                        Item Total: $${itemTotal.toFixed(2)}<br><br>
+                        <button onclick="removeItem(${index})">Remove</button>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById("cart-items").innerHTML = output;
+        document.getElementById("cart-total").innerText = "Total: $" + total.toFixed(2);
+
+        function removeItem(index) {
+            cart.splice(index, 1);
+            localStorage.setItem("cart", JSON.stringify(cart));
+            location.reload();
+        }
+
+        function updateQuantity(index, newQuantity) {
+            newQuantity = parseInt(newQuantity);
+
+            if (newQuantity < 1) {
+                newQuantity = 1;
+            }
+
+            cart[index].quantity = newQuantity;
+            localStorage.setItem("cart", JSON.stringify(cart));
+            location.reload();
+        }
+
+        function checkout() {
+            let customerName = document.getElementById("customer_name").value;
+
+            if (cart.length === 0) {
+                alert("Cart is empty");
+                return;
+            }
+
+            if (customerName.trim() === "") {
+                alert("Please enter your name");
+                return;
+            }
+
+            fetch("api/order.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    customer_name: customerName,
+                    items: cart
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.order_id) {
+                    localStorage.removeItem("cart");
+                    window.location.href = `confirm.html?id=${data.order_id}`;
+                } else {
+                    alert("Checkout failed");
+                    console.log(data);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

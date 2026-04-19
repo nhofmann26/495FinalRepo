@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UPshop Catalog</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>UPshop</h1>
+        <nav>
+            <a href="index.html">Shop</a>
+            <a href="cart.html">Cart</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Product Catalog</h2>
+
+        <div class="controls">
+            <input type="text" id="search" placeholder="Search products">
+
+            <select id="category">
+                <option value="0">All Categories</option>
+                <option value="1">Apparel</option>
+                <option value="2">Outdoor Gear</option>
+                <option value="3">Home Goods</option>
+                <option value="4">Electronics</option>
+                <option value="5">Food & Drink</option>
+            </select>
+
+            <button onclick="loadProducts()">Search / Filter</button>
+        </div>
+
+        <div id="products" class="grid"></div>
+    </main>
+
+    <script>
+        function loadProducts() {
+            let search = document.getElementById("search").value;
+            let category = document.getElementById("category").value;
+
+            let params = [];
+
+            if (search.trim() !== "") {
+                params.push("search=" + encodeURIComponent(search));
+            }
+
+            if (category !== "0") {
+                params.push("category=" + category);
+            }
+
+            let url = "api/products.php";
+            if (params.length > 0) {
+                url += "?" + params.join("&");
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    let output = "";
+
+                    if (data.length === 0) {
+                        output = "<p>No products found.</p>";
+                    } else {
+                        data.forEach(product => {
+                            output += `
+                                <div class="card">
+                                    <img src="${product.image_url}" alt="${product.name}">
+                                    <strong>${product.name}</strong><br><br>
+                                    $${product.price}<br>
+                                    <p>${product.description}</p>
+                                    <p>Category: ${product.category_name}</p>
+                                    <a href="product.html?id=${product.product_id}">View Product</a>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    document.getElementById("products").innerHTML = output;
+                });
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>
