@@ -55,7 +55,5 @@ UPshop/
 3. Update database connection settings in the PHP API files  
 4. Access the site using the provided URL  
 
-## ER Diagram
-
-## Notes
-This project focuses on using a relational database with PHP-based API endpoints to support core e-commerce functionality without authentication or concurrency handling.
+## ER Diagram 
+- uploaded on assignment
