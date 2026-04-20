@@ -3,6 +3,8 @@
 ## Overview
 UPshop is a simple e-commerce style web application built using MySQL and PHP. The site allows users to browse products, view details, add items to a cart, place orders, and view reports based on stored data.
 
+link: https://noah-hofmann.free.nf/
+
 ## Tech Stack
 - Frontend: HTML, CSS, JavaScript  
 - Backend: PHP  
